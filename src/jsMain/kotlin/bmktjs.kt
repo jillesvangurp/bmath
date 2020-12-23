@@ -3,10 +3,7 @@ import dev.fritz2.dom.html.RenderContext
 import dev.fritz2.dom.html.render
 import dev.fritz2.dom.mount
 import kotlinx.coroutines.flow.map
-import models.BaseIngredients
-import models.CompositeIngredient
-import models.L
-import models.sourDough
+import models.*
 
 class CompositeIngredientStore:RootStore<CompositeIngredient>(sourDough(.65).adjustRatioTo(BaseIngredients.Flour,1000.0, "grams")) {
     val name = this.sub(L.CompositeIngredient.name)
@@ -28,13 +25,13 @@ fun RenderContext.compositeIngredient(compositeIngredientStore: CompositeIngredi
         h2 { compositeIngredientStore.name.data.asText() }
         p {
             +"hydration: "
-            compositeIngredientStore.data.map { it.hydration()*100 }.asText()
+            compositeIngredientStore.data.map { (it.hydration()*100).roundTo(2) }.asText()
             +" %"
         }
         div("mb-3") {
             compositeIngredientStore.ingredients.data.renderEach { (v,i)->
                 div {
-                    p { +"${i.name}: $v ${compositeIngredientStore.unit.current}"  }
+                    p { +"${i.name}: ${v.roundTo(2)} ${compositeIngredientStore.unit.current}"  }
                     if(i is CompositeIngredient) {
                         p { +i.toString() }
                     }

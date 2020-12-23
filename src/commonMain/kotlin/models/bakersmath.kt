@@ -1,6 +1,9 @@
 package models
 
 import dev.fritz2.lenses.Lenses
+import kotlin.math.exp
+import kotlin.math.pow
+import kotlin.math.round
 
 interface Ingredient {
     val name: String
@@ -12,6 +15,11 @@ enum class BaseIngredients : Ingredient {
     Salt,
     Butter,
     Sugar
+}
+
+fun Double.roundTo(decimals:Int=2): Double {
+    val factor = 10.toDouble().pow(decimals)
+    return round(this * factor)/factor
 }
 
 @Lenses
@@ -68,7 +76,7 @@ data class CompositeIngredient(
 
     override fun toString() =
         """$name
-${ingredients.joinToString(", ") { it.first.toString() + " $unit " + it.second.name.toLowerCase() }}"""
+${ingredients.joinToString(", ") { "${it.first.roundTo(2)} $unit ${it.second.name.toLowerCase()}" }}"""
 }
 
 val starter = CompositeIngredient(
