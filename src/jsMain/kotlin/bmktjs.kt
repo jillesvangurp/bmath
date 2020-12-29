@@ -2,6 +2,7 @@ import dev.fritz2.binding.RootStore
 import dev.fritz2.dom.html.RenderContext
 import dev.fritz2.dom.html.render
 import dev.fritz2.dom.mount
+import dev.fritz2.dom.values
 import kotlinx.coroutines.flow.map
 import models.*
 
@@ -9,6 +10,11 @@ class CompositeIngredientStore:RootStore<CompositeIngredient>(sourDough(.65).adj
     val name = this.sub(L.CompositeIngredient.name)
     val unit = this.sub(L.CompositeIngredient.unit)
     val ingredients = this.sub(L.CompositeIngredient.ingredients)
+
+    val change = handle<Pair<Int,String>> { model, (index,value) ->
+        println("change!")
+        model.updateValue(index, value.toDouble())
+    }
 }
 
 fun main() {
@@ -21,37 +27,52 @@ fun main() {
 }
 
 fun RenderContext.compositeIngredient(compositeIngredientStore: CompositeIngredientStore) {
+    println("render! ${compositeIngredientStore.current}")
     div {
         h2 { compositeIngredientStore.name.data.asText() }
+
+        div("mb-3") {
+            var index=0
+            println(index)
+            compositeIngredientStore.ingredients.renderEach {subStore ->
+                val (v,i) = subStore.current
+                div {
+                    div {
+                        label {
+                            `for`(subStore.id)
+                            +("${i.name} (${compositeIngredientStore.unit.current   })")
+                        }
+                        input("form-control", id = subStore.id) {
+                            placeholder("0.0")
+                            value("${v.roundTo(2)}")
+
+                            changes.values().map { it.toDouble() to i } handledBy subStore.update
+                        }
+                        index++
+                    }
+                }
+            }
+//            compositeIngredientStore.ingredients.data.renderEach { (v,i)->
+//                div {
+//                    val inputId = compositeIngredientStore.id+"_ingredients_$index"
+//                    label {
+//                        `for`(inputId)
+//                        +("${i.name} (${compositeIngredientStore.unit})")
+//                    }
+//                    input("form-control", id = inputId) {
+//                        placeholder("0.0")
+//                        value("${v.roundTo(2)}")
+//
+//                        changes.values().map { index to it } handledBy compositeIngredientStore.change
+//                    }
+//                    index++
+//                }
+//            }
+        }
         p {
             +"hydration: "
             compositeIngredientStore.data.map { (it.hydration()*100).roundTo(2) }.asText()
             +" %"
         }
-        div("mb-3") {
-            compositeIngredientStore.ingredients.data.renderEach { (v,i)->
-                div {
-                    p { +"${i.name}: ${v.roundTo(2)} ${compositeIngredientStore.unit.current}"  }
-                    if(i is CompositeIngredient) {
-                        p { +i.toString() }
-                    }
-                }
-            }
-        }
     }
 }
-
-//fun RenderContext.doubleField(store: SubStore<OldIngredients, OldIngredients, Double>, description: String) {
-//    div("form-group") {
-//        label {
-//            `for`(store.id)
-//            +description
-//        }
-//        input("form-control", id = store.id) {
-//            placeholder("0.0")
-//            value(store.data.asString())
-//
-//            changes.values().map { it.toDouble() } handledBy store.update
-//        }
-//    }
-//}

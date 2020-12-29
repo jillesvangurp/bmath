@@ -32,6 +32,12 @@ data class CompositeIngredient(
         return water() / flour()
     }
 
+    fun updateValue(index: Int, value: Double): CompositeIngredient {
+        val updatedIngredients = ingredients.toMutableList()
+        updatedIngredients[index] = value to ingredients[index].second
+        return copy(ingredients = updatedIngredients)
+    }
+
     fun water(): Double = ingredients.map { (v, i) ->
         when (i) {
             BaseIngredients.Water -> {
