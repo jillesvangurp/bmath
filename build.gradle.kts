@@ -1,3 +1,5 @@
+@file:Suppress("UNUSED_VARIABLE")
+
 plugins {
     id("dev.fritz2.fritz2-gradle") version "0.8"
 }
@@ -26,7 +28,8 @@ kotlin {
         }
         binaries.executable()
     }
-    jvm {}
+    jvm {
+    }
 
     sourceSets {
         val commonMain by getting {
@@ -44,6 +47,11 @@ kotlin {
         val jsTest by getting {
             dependencies {
                 implementation(kotlin("test-js"))
+            }
+        }
+        val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("test-junit"))
             }
         }
     }
