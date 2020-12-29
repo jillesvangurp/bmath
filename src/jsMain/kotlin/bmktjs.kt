@@ -17,7 +17,7 @@ class CompositeIngredientStore :
     val ingredients = this.sub(L.CompositeIngredient.ingredients)
 
     val hydrate = handle<String> { _,v ->
-        val modified = current.hydrate(v.toDouble())
+        val modified = current.hydrate(v.toDouble()/100)
 
         modified
     }
@@ -29,7 +29,6 @@ class CompositeIngredientStore :
 }
 
 fun main() {
-
     val compositeIngredientStore = CompositeIngredientStore()
 
     render {
@@ -49,6 +48,32 @@ fun RenderContext.compositeIngredient(compositeIngredientStore: CompositeIngredi
             button {
                 +"Reset"
                 clicks handledBy compositeIngredientStore.reset
+            }
+        }
+        h2 {
+            +"TODO"
+        }
+        ul {
+            li {
+                +"fix salt percentage & update salt content dynamically"
+            }
+            li {
+                +"recipe dropdown (sourdough, oliebollen, pie dough, ..."
+            }
+            li {
+                +"custom recipe editor"
+            }
+            li {
+                +"nested composite handling is probably foobarred"
+            }
+            li {
+                +"button styling"
+            }
+            li {
+                +"total weight & adjust everything"
+            }
+            li {
+                +"unit conversions"
             }
         }
     }
