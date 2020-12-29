@@ -1,7 +1,6 @@
 package models
 
 import dev.fritz2.lenses.Lenses
-import kotlin.math.exp
 import kotlin.math.pow
 import kotlin.math.round
 
@@ -17,52 +16,62 @@ enum class BaseIngredients : Ingredient {
     Sugar
 }
 
-fun Double.roundTo(decimals:Int=2): Double {
+fun Double.roundTo(decimals: Int = 2): Double {
     val factor = 10.toDouble().pow(decimals)
-    return round(this * factor)/factor
+    return round(this * factor) / factor
 }
+
+fun List<Pair<Double, Ingredient>>.water(): Double = this.map { (v, i) ->
+    when (i) {
+        BaseIngredients.Water -> {
+            v
+        }
+        is CompositeIngredient -> {
+            v * (i.ingredients.water() / i.ingredients.total())
+        }
+        else -> 0.0
+    }
+}.sum()
+
+fun List<Pair<Double, Ingredient>>.flour(): Double = this.map { (v, i) ->
+    when (i) {
+        BaseIngredients.Flour -> {
+            v
+        }
+        is CompositeIngredient -> {
+            v * i.ingredients.water() / i.ingredients.total()
+        }
+        else -> 0.0
+    }
+}.sum()
+
+fun List<Pair<Double, Ingredient>>.hydration() = this.water() / this.flour()
+fun List<Pair<Double, Ingredient>>.total(): Double = this.map { it.first }.sum()
 
 @Lenses
 data class CompositeIngredient(
     override val name: String,
     val ingredients: List<Pair<Double, Ingredient>>,
-    val unit: String = "parts"
+    val unit: String = "parts",
 ) : Ingredient {
-    fun hydration(): Double {
-        return water() / flour()
-    }
 
-    fun updateValue(index: Int, value: Double): CompositeIngredient {
-        val updatedIngredients = ingredients.toMutableList()
-        updatedIngredients[index] = value to ingredients[index].second
+    fun hydrate(hydration: Double): CompositeIngredient {
+        val waterContentOfCompositeSubIngredients = ingredients.map { (v, i) ->
+            if (i is CompositeIngredient) v * i.ingredients.water() / i.ingredients.total()
+            else 0.0
+        }.sum()
+        val dryIngredients = ingredients.flour()
+        val desiredWaterContent = dryIngredients * hydration
+        println("$dryIngredients $desiredWaterContent")
+        val updatedIngredients = ingredients.map { (v, i) ->
+            if (i == BaseIngredients.Water) {
+                println("hydrating ($desiredWaterContent - $waterContentOfCompositeSubIngredients) = ${(desiredWaterContent - waterContentOfCompositeSubIngredients)}")
+                (desiredWaterContent - waterContentOfCompositeSubIngredients) to i
+            } else
+                v to i
+        }
         return copy(ingredients = updatedIngredients)
     }
-
-    fun water(): Double = ingredients.map { (v, i) ->
-        when (i) {
-            BaseIngredients.Water -> {
-                v
-            }
-            is CompositeIngredient -> {
-                v * i.water() / i.total()
-            }
-            else -> 0.0
-        }
-    }.sum()
-
-    fun flour(): Double = ingredients.map { (v, i) ->
-        when (i) {
-            BaseIngredients.Flour -> {
-                v
-            }
-            is CompositeIngredient -> {
-                v * i.flour() / i.total()
-            }
-            else -> 0.0
-        }
-    }.sum()
-
-    fun total(): Double = ingredients.map { it.first }.sum()
 
     fun adjustRatioTo(ingredient: Ingredient, quantity: Double, unit: String): CompositeIngredient {
         val ingredientComponent = ingredients.firstOrNull { it.second.name == ingredient.name }
@@ -71,10 +80,10 @@ data class CompositeIngredient(
         return adjusted(baseUnit, unit)
     }
 
-    private fun adjusted(factor: Double, unit: String): CompositeIngredient =
+    fun adjusted(factor: Double, unit: String): CompositeIngredient =
         CompositeIngredient(name, ingredients.map { (v, i) ->
             if (i is CompositeIngredient) {
-                v * factor to i.adjusted(factor * v / i.total(), unit)
+                v * factor to i.adjusted(factor * v / i.ingredients.total(), unit)
             } else {
                 v * factor to i
             }
@@ -108,7 +117,7 @@ fun sourDough(hydration: Double): CompositeIngredient {
         "Sourdough", listOf(
             starterQuantity to starter,
             flourQuantity to BaseIngredients.Flour,
-            ((flourQuantity + starterQuantity * starter.flour() / starter.total()) * hydration) - starterQuantity * starter.water() / starter.total() to BaseIngredients.Water,
+            ((flourQuantity + starterQuantity * starter.ingredients.flour() / starter.ingredients.total()) * hydration) - starterQuantity * starter.ingredients.water() / starter.ingredients.total() to BaseIngredients.Water,
             flourQuantity * 0.022 to BaseIngredients.Salt
         )
     )
