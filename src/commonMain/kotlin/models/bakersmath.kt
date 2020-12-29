@@ -94,6 +94,14 @@ data class CompositeIngredient(
 ${ingredients.joinToString(", ") { "${it.first.roundTo(2)} $unit ${it.second.name.toLowerCase()}" }}"""
 }
 
+fun Ingredient.changeValue(value: Double): Ingredient {
+    return if(this is CompositeIngredient){
+        this.copy(ingredients = ingredients.map { (v, i) -> v / ingredients.total() * value to i })
+    } else {
+        this
+    }
+}
+
 val starter = CompositeIngredient(
     "Sourdough Starter", listOf(
         1.0 to BaseIngredients.Water,
