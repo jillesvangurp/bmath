@@ -8,11 +8,11 @@ import dev.fritz2.dom.values
 import kotlinx.coroutines.flow.map
 import models.*
 
-val sourDough = sourDough(.65).adjustRatioTo(BaseIngredients.Wheat, 1000.0, "grams")
+val sourDough = sourDough(.65).adjustRatioTo(BaseIngredients.Wheat, 800.0, "grams")
 
 class CompositeIngredientStore :
     RootStore<CompositeIngredient>(sourDough) {
-    val name = this.sub(L.CompositeIngredient.name)
+    val label = this.sub(L.CompositeIngredient.label)
     val unit = this.sub(L.CompositeIngredient.unit)
     val ingredients = this.sub(L.CompositeIngredient.ingredients)
 
@@ -38,7 +38,7 @@ fun main() {
 
 fun RenderContext.compositeIngredient(compositeIngredientStore: CompositeIngredientStore) {
     div {
-        h2 { compositeIngredientStore.name.data.asText() }
+        h2 { compositeIngredientStore.label.data.asText() }
 
         div("mb-3") {
             compositeIngredientStore.ingredients.renderEach { subStore ->
@@ -84,7 +84,7 @@ fun RenderContext.ingredientInput(compositeIngredientStore : CompositeIngredient
     return div {
         label {
             `for`(subStore.id)
-            +("${i.name} (${compositeIngredientStore.unit.current})")
+            +("${i.label} (${compositeIngredientStore.unit.current})")
         }
         input("form-control", id = subStore.id) {
             value(subStore.data.map { (_,v) -> v.roundTo(2).toString()})

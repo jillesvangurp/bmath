@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package models
 
 import dev.fritz2.lenses.Lenses
@@ -5,19 +7,19 @@ import kotlin.math.pow
 import kotlin.math.round
 
 interface Ingredient {
-    val name: String
+    val label: String
 }
 
-enum class BaseIngredients(val isFlour: Boolean = false) : Ingredient {
-    Water,
-    AllPurposeFlour(true),
-    Wheat(true),
-    WholeWheat(true),
-    Rye(true),
-    Spelt(true),
-    Salt,
-    Butter,
-    Sugar
+enum class BaseIngredients(override val label: String, val isFlour: Boolean = false) : Ingredient {
+    Water("water"),
+    AllPurposeFlour("all purpose flour",true),
+    Wheat("wheat",true),
+    WholeWheat("whole wheat",true),
+    Rye("rye",true),
+    Spelt("spelt",true),
+    Salt("salt"),
+    Butter("butter"),
+    Sugar("sugar")
 }
 
 fun Double.roundTo(decimals: Int = 2): Double {
@@ -63,7 +65,7 @@ fun List<Pair<Ingredient, Double>>.total(): Double =
 
 @Lenses
 data class CompositeIngredient(
-    override val name: String,
+    override val label: String,
     val ingredients: List<Pair<Ingredient, Double>>,
     val unit: String = "parts",
 ) : Ingredient {
@@ -87,14 +89,14 @@ data class CompositeIngredient(
     }
 
     fun adjustRatioTo(ingredient: Ingredient, quantity: Double, unit: String): CompositeIngredient {
-        val ingredientComponent = ingredients.firstOrNull { it.first.name == ingredient.name }
-            ?: throw IllegalArgumentException("ingredient ${ingredient.name} is not part of $name")
+        val ingredientComponent = ingredients.firstOrNull { it.first.label == ingredient.label }
+            ?: throw IllegalArgumentException("ingredient ${ingredient.label} is not part of $label")
         val baseUnit = quantity / ingredientComponent.second
         return adjusted(baseUnit, unit)
     }
 
     fun adjusted(factor: Double, unit: String): CompositeIngredient =
-        CompositeIngredient(name, ingredients.map { (i, v) ->
+        CompositeIngredient(label, ingredients.map { (i, v) ->
             if (i is CompositeIngredient) {
                 i.adjusted(factor * v / i.ingredients.total(), unit) to v * factor
             } else {
@@ -103,8 +105,8 @@ data class CompositeIngredient(
         }, unit)
 
     override fun toString() =
-        """$name
-${ingredients.joinToString(", ") { "${it.second.roundTo(2)} $unit ${it.first.name.toLowerCase()}" }}"""
+        """$label
+${ingredients.joinToString(", ") { "${it.second.roundTo(2)} $unit ${it.first.label.toLowerCase()}" }}"""
 }
 
 fun Ingredient.changeValue(value: Double): Ingredient {
@@ -118,13 +120,13 @@ fun Ingredient.changeValue(value: Double): Ingredient {
 val starter = CompositeIngredient(
     "Sourdough Starter", listOf(
         BaseIngredients.Water to 1.0,
-        BaseIngredients.Wheat to 1.0
+        BaseIngredients.WholeWheat to 1.0
     )
 )
 
 val pieDough = CompositeIngredient(
     "Pie Dough", listOf(
-        BaseIngredients.Wheat to 3.0,
+        BaseIngredients.AllPurposeFlour to 3.0,
         BaseIngredients.Butter to 2.0,
         BaseIngredients.Sugar to 1.0,
         BaseIngredients.Water to 0.1
@@ -137,7 +139,8 @@ fun sourDough(hydration: Double): CompositeIngredient {
     return CompositeIngredient(
         "Sourdough", listOf(
             starter to starterQuantity,
-            BaseIngredients.Wheat to flourQuantity,
+            BaseIngredients.Wheat to flourQuantity*0.8,
+            BaseIngredients.WholeWheat to flourQuantity*0.2,
             BaseIngredients.Water to ((flourQuantity + starterQuantity * starter.ingredients.flourContent() / starter.ingredients.total()) * hydration) - starterQuantity * starter.ingredients.waterContent() / starter.ingredients.total(),
             BaseIngredients.Salt to flourQuantity * 0.022
         )
