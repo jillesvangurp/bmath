@@ -8,7 +8,7 @@ import dev.fritz2.dom.values
 import kotlinx.coroutines.flow.map
 import models.*
 
-val sourDough = sourDough(.65).adjustRatioTo(BaseIngredients.Flour, 1000.0, "grams")
+val sourDough = sourDough(.65).adjustRatioTo(BaseIngredients.Wheat, 1000.0, "grams")
 
 class CompositeIngredientStore :
     RootStore<CompositeIngredient>(sourDough) {
@@ -79,18 +79,18 @@ fun RenderContext.compositeIngredient(compositeIngredientStore: CompositeIngredi
     }
 }
 
-fun RenderContext.ingredientInput(compositeIngredientStore : CompositeIngredientStore, subStore: SubStore<CompositeIngredient, List<Pair<Double, Ingredient>>, Pair<Double, Ingredient>>): Div {
-    val (_, i) = subStore.current
+fun RenderContext.ingredientInput(compositeIngredientStore : CompositeIngredientStore, subStore: SubStore<CompositeIngredient, List<Pair<Ingredient, Double>>, Pair<Ingredient, Double>>): Div {
+    val (i, _) = subStore.current
     return div {
         label {
             `for`(subStore.id)
             +("${i.name} (${compositeIngredientStore.unit.current})")
         }
         input("form-control", id = subStore.id) {
-            value(subStore.data.map { (v,_) -> v.roundTo(2).toString()})
+            value(subStore.data.map { (_,v) -> v.roundTo(2).toString()})
 
-            changes.values().map { it.toDouble() } handledBy subStore.handle { (_, ingredient), newValue ->
-                newValue to ingredient.changeValue(newValue)
+            changes.values().map { it.toDouble() } handledBy subStore.handle { (ingredient, _), newValue ->
+                ingredient.changeValue(newValue) to newValue
             }
         }
         if(i is CompositeIngredient) {
