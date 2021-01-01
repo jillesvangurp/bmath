@@ -8,7 +8,7 @@ import dev.fritz2.dom.values
 import kotlinx.coroutines.flow.map
 import models.*
 
-val sourDough = sourDough(.65).adjustRatioTo(BaseIngredients.Wheat, 800.0, "grams")
+val sourDough = sourDough(.65).adjustRatioTo(BaseIngredient.Wheat, 800.0, "grams")
 
 class CompositeIngredientStore :
     RootStore<CompositeIngredient>(sourDough) {
@@ -16,14 +16,15 @@ class CompositeIngredientStore :
     val unit = this.sub(L.CompositeIngredient.unit)
     val ingredients = this.sub(L.CompositeIngredient.ingredients)
 
-    val hydrate = handle<String> { _,v ->
-        val modified = current.hydrate(v.toDouble()/100)
+    val hydrate = handle<String> { _, v ->
+        current.hydrate(v.toDouble() / 100)
+    }
 
-        modified
+    val setSalt = handle<String> { _,v->
+        current.addSaltPercentage(v.toDouble()/100)
     }
 
     val reset = handle { _->
-        println("reset")
         sourDough
     }
 }
@@ -45,6 +46,7 @@ fun RenderContext.compositeIngredient(compositeIngredientStore: CompositeIngredi
                 ingredientInput(compositeIngredientStore,subStore)
             }
             hydrationInput(compositeIngredientStore)
+            saltPercentageInput(compositeIngredientStore)
             button {
                 +"Reset"
                 clicks handledBy compositeIngredientStore.reset
@@ -54,9 +56,6 @@ fun RenderContext.compositeIngredient(compositeIngredientStore: CompositeIngredi
             +"TODO"
         }
         ul {
-            li {
-                +"fix salt percentage & update salt content dynamically"
-            }
             li {
                 +"recipe dropdown (sourdough, oliebollen, pie dough, ..."
             }
@@ -123,6 +122,21 @@ fun RenderContext.hydrationInput(compositeIngredientStore: CompositeIngredientSt
     }
 }
 
+fun RenderContext.saltPercentageInput(compositeIngredientStore: CompositeIngredientStore) {
+    div {
+        label {
+            `for`(compositeIngredientStore.id + ".salt")
+            +"Salt percentage (%)"
+        }
+        input("form-control", id = compositeIngredientStore.id+".salt") {
+            placeholder("0.0")
+            value(compositeIngredientStore.data.map {
+                (it.ingredients.saltPercentage()*100).roundTo(2).toString() + ""
+            })
 
+            changes.values() handledBy compositeIngredientStore.setSalt
+        }
+    }
+}
 
 

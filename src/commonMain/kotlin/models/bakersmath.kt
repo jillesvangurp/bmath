@@ -10,13 +10,13 @@ interface Ingredient {
     val label: String
 }
 
-enum class BaseIngredients(override val label: String, val isFlour: Boolean = false) : Ingredient {
+enum class BaseIngredient(override val label: String, val isFlour: Boolean = false) : Ingredient {
     Water("water"),
-    AllPurposeFlour("all purpose flour",true),
-    Wheat("wheat",true),
-    WholeWheat("whole wheat",true),
-    Rye("rye",true),
-    Spelt("spelt",true),
+    AllPurposeFlour("all purpose flour", true),
+    Wheat("wheat", true),
+    WholeWheat("whole wheat", true),
+    Rye("rye", true),
+    Spelt("spelt", true),
     Salt("salt"),
     Butter("butter"),
     Sugar("sugar")
@@ -27,22 +27,24 @@ fun Double.roundTo(decimals: Int = 2): Double {
     return round(this * factor) / factor
 }
 
-fun List<Pair<Ingredient, Double>>.waterContent(): Double = this.map { (i, v) ->
+fun List<Pair<Ingredient, Double>>.content(ingredient: BaseIngredient): Double = this.map { (i, v) ->
     when (i) {
-        BaseIngredients.Water -> {
+        ingredient -> {
             v
         }
         is CompositeIngredient -> {
-            i.ingredients.waterContent()
+            i.ingredients.content(ingredient)
         }
         else -> 0.0
     }
 }.sum()
 
+fun List<Pair<Ingredient, Double>>.waterContent(): Double = content(BaseIngredient.Water)
+fun List<Pair<Ingredient, Double>>.saltContent(): Double = content(BaseIngredient.Salt)
 
 fun List<Pair<Ingredient, Double>>.flourContent(): Double = this.map { (i, v) ->
     when (i) {
-        is BaseIngredients -> {
+        is BaseIngredient -> {
             if (i.isFlour) {
                 v
             } else {
@@ -50,7 +52,7 @@ fun List<Pair<Ingredient, Double>>.flourContent(): Double = this.map { (i, v) ->
             }
         }
         is CompositeIngredient -> {
-            v * i.ingredients.flourContent() / i.ingredients.total()
+            i.ingredients.flourContent()
         }
         else -> 0.0
     }
@@ -59,6 +61,9 @@ fun List<Pair<Ingredient, Double>>.flourContent(): Double = this.map { (i, v) ->
 
 fun List<Pair<Ingredient, Double>>.hydration() =
     this.waterContent() / this.flourContent()
+
+fun List<Pair<Ingredient, Double>>.saltPercentage() =
+    this.saltContent() / this.flourContent()
 
 fun List<Pair<Ingredient, Double>>.total(): Double =
     this.map { it.second }.sum()
@@ -75,23 +80,44 @@ data class CompositeIngredient(
      * the water content of the any composite ingredients like starters. Returns a new CompositeIngredient
      * with the correct amount of water to get the hydration percentage.
      */
-    fun hydrate(hydration: Double): CompositeIngredient {
+    fun hydrate(waterFactor: Double): CompositeIngredient {
         val waterContentOfCompositeSubIngredients = ingredients.map { (i, v) ->
             if (i is CompositeIngredient) v * i.ingredients.waterContent() / i.ingredients.total()
             else 0.0
         }.sum()
         val dryIngredients = ingredients.flourContent()
-        val desiredWaterContent = dryIngredients * hydration
+        val desiredWaterContent = dryIngredients * waterFactor
 
-        val updatedIngredients =if(ingredients.toMap().containsKey(BaseIngredients.Water)) {
-             ingredients.map { (i, v) ->
-                if (i == BaseIngredients.Water) {
+        val updatedIngredients = if (ingredients.toMap().containsKey(BaseIngredient.Water)) {
+            ingredients.map { (i, v) ->
+                if (i == BaseIngredient.Water) {
                     i to (desiredWaterContent - waterContentOfCompositeSubIngredients)
                 } else
                     i to v
             }
         } else {
-            ingredients + listOf(BaseIngredients.Water to (desiredWaterContent - waterContentOfCompositeSubIngredients))
+            ingredients + listOf(BaseIngredient.Water to (desiredWaterContent - waterContentOfCompositeSubIngredients))
+        }
+        return copy(ingredients = updatedIngredients)
+    }
+
+    fun addSaltPercentage(saltFactor: Double): CompositeIngredient {
+        val saltContentOfCompositeSubIngredients = ingredients.map { (i, v) ->
+            if (i is CompositeIngredient) v * i.ingredients.saltContent() / i.ingredients.total()
+            else 0.0
+        }.sum()
+        val dryIngredients = ingredients.flourContent()
+        val desiredSaltContent = dryIngredients * saltFactor
+
+        val updatedIngredients = if (ingredients.toMap().containsKey(BaseIngredient.Salt)) {
+            ingredients.map { (i, v) ->
+                if (i == BaseIngredient.Salt) {
+                    i to (desiredSaltContent - saltContentOfCompositeSubIngredients)
+                } else
+                    i to v
+            }
+        } else {
+            ingredients + listOf(BaseIngredient.Salt to (desiredSaltContent - saltContentOfCompositeSubIngredients))
         }
         return copy(ingredients = updatedIngredients)
     }
@@ -131,30 +157,34 @@ ${ingredients.joinToString(", ") { "${it.second.roundTo(2)} $unit ${it.first.lab
 
 val starter = CompositeIngredient(
     "Sourdough Starter", listOf(
-        BaseIngredients.Water to 1.0,
-        BaseIngredients.WholeWheat to 1.0
+        BaseIngredient.Water to 1.0,
+        BaseIngredient.WholeWheat to 1.0
     )
 )
 
 val pieDough = CompositeIngredient(
     "Pie Dough", listOf(
-        BaseIngredients.AllPurposeFlour to 3.0,
-        BaseIngredients.Butter to 2.0,
-        BaseIngredients.Sugar to 1.0,
-        BaseIngredients.Water to 0.1
+        BaseIngredient.AllPurposeFlour to 3.0,
+        BaseIngredient.Butter to 2.0,
+        BaseIngredient.Sugar to 1.0,
     )
-)
+).addSaltPercentage(0.022).hydrate(0.03)
 
-fun sourDough(hydration: Double): CompositeIngredient {
+val pancakeBatter = CompositeIngredient(
+    "Pancake Batter",
+    listOf(BaseIngredient.AllPurposeFlour to 1.0)
+).hydrate(0.95).addSaltPercentage(0.022)
+
+fun sourDough(hydration: Double=0.65, saltPercentage: Double = 0.022): CompositeIngredient {
     val starterQuantity = 1.0
-    val flourQuantity = 4.0
+    val flourQuantity = 5.0
+
+
     return CompositeIngredient(
         "Sourdough", listOf(
-            starter to starterQuantity,
-            BaseIngredients.Wheat to flourQuantity*0.8,
-            BaseIngredients.WholeWheat to flourQuantity*0.2,
-            BaseIngredients.Water to ((flourQuantity + starterQuantity * starter.ingredients.flourContent() / starter.ingredients.total()) * hydration) - starterQuantity * starter.ingredients.waterContent() / starter.ingredients.total(),
-            BaseIngredients.Salt to flourQuantity * 0.022
+            starter.multiply(starterQuantity / starter.ingredients.total(), starter.unit) to starterQuantity,
+            BaseIngredient.Wheat to flourQuantity * 0.8,
+            BaseIngredient.WholeWheat to flourQuantity * 0.2,
         )
-    )
+    ).hydrate(hydration).addSaltPercentage(saltPercentage)
 }
