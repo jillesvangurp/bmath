@@ -33,7 +33,7 @@ fun List<Pair<Ingredient, Double>>.waterContent(): Double = this.map { (i, v) ->
             v
         }
         is CompositeIngredient -> {
-            v * (i.ingredients.waterContent() / i.ingredients.total())
+            i.ingredients.waterContent()
         }
         else -> 0.0
     }
@@ -83,11 +83,15 @@ data class CompositeIngredient(
         val dryIngredients = ingredients.flourContent()
         val desiredWaterContent = dryIngredients * hydration
 
-        val updatedIngredients = ingredients.map { (i, v) ->
-            if (i == BaseIngredients.Water) {
-                i to (desiredWaterContent - waterContentOfCompositeSubIngredients)
-            } else
-                i to v
+        val updatedIngredients =if(ingredients.toMap().containsKey(BaseIngredients.Water)) {
+             ingredients.map { (i, v) ->
+                if (i == BaseIngredients.Water) {
+                    i to (desiredWaterContent - waterContentOfCompositeSubIngredients)
+                } else
+                    i to v
+            }
+        } else {
+            ingredients + listOf(BaseIngredients.Water to (desiredWaterContent - waterContentOfCompositeSubIngredients))
         }
         return copy(ingredients = updatedIngredients)
     }
@@ -104,17 +108,17 @@ data class CompositeIngredient(
         val ingredientComponent = ingredients.firstOrNull { it.first.label == ingredient.label }
             ?: throw IllegalArgumentException("ingredient ${ingredient.label} is not part of $label")
         val baseUnit = quantity / ingredientComponent.second
-        return adjusted(baseUnit, unit)
+        return multiply(baseUnit, unit)
     }
 
     /**
      * Multiplies the ingredient amounts by a factor. Returns a new CompositeIngredient with
      * the adjusted amounts and unit.
      */
-    fun adjusted(factor: Double, unit: String): CompositeIngredient =
+    fun multiply(factor: Double, unit: String): CompositeIngredient =
         CompositeIngredient(label, ingredients.map { (i, v) ->
             if (i is CompositeIngredient) {
-                i.adjusted(factor * v / i.ingredients.total(), unit) to v * factor
+                i.multiply(factor * v / i.ingredients.total(), unit) to v * factor
             } else {
                 i to v * factor
             }
