@@ -90,7 +90,12 @@ fun RenderContext.ingredientInput(compositeIngredientStore : CompositeIngredient
             value(subStore.data.map { (_,v) -> v.roundTo(2).toString()})
 
             changes.values().map { it.toDouble() } handledBy subStore.handle { (ingredient, _), newValue ->
-                ingredient.changeValue(newValue) to newValue
+                (if (ingredient is CompositeIngredient) {
+                    // adjust the sub ingredients to the new value
+                    ingredient.copy(ingredients = ingredient.ingredients.map { (i, v) -> i to v / ingredient.ingredients.total() * newValue })
+                } else {
+                    ingredient
+                }) to newValue
             }
         }
         if(i is CompositeIngredient) {

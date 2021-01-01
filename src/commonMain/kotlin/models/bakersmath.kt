@@ -70,6 +70,11 @@ data class CompositeIngredient(
     val unit: String = "parts",
 ) : Ingredient {
 
+    /**
+     * Figures out the correct water amount to get the desired hydration percentage. Takes into account
+     * the water content of the any composite ingredients like starters. Returns a new CompositeIngredient
+     * with the correct amount of water to get the hydration percentage.
+     */
     fun hydrate(hydration: Double): CompositeIngredient {
         val waterContentOfCompositeSubIngredients = ingredients.map { (i, v) ->
             if (i is CompositeIngredient) v * i.ingredients.waterContent() / i.ingredients.total()
@@ -77,10 +82,9 @@ data class CompositeIngredient(
         }.sum()
         val dryIngredients = ingredients.flourContent()
         val desiredWaterContent = dryIngredients * hydration
-        println("$dryIngredients $desiredWaterContent")
+
         val updatedIngredients = ingredients.map { (i, v) ->
             if (i == BaseIngredients.Water) {
-                println("hydrating ($desiredWaterContent - $waterContentOfCompositeSubIngredients) = ${(desiredWaterContent - waterContentOfCompositeSubIngredients)}")
                 i to (desiredWaterContent - waterContentOfCompositeSubIngredients)
             } else
                 i to v
@@ -88,6 +92,14 @@ data class CompositeIngredient(
         return copy(ingredients = updatedIngredients)
     }
 
+    /**
+     * Allows you to adjust a recipe specified in part ratios by simply specifying
+     * one of the ingredients in the desired quantity. For example pie dough is 3 parts
+     * flour, 2 parts butter and 1 part sugar. Adjusting to 50 grams sugar of flour means everything
+     * is multiplied accordingly (150/100/50).
+     *
+     * Returns a new CompositeIngredient with the adjusted amounts and unit.
+     */
     fun adjustRatioTo(ingredient: Ingredient, quantity: Double, unit: String): CompositeIngredient {
         val ingredientComponent = ingredients.firstOrNull { it.first.label == ingredient.label }
             ?: throw IllegalArgumentException("ingredient ${ingredient.label} is not part of $label")
@@ -95,6 +107,10 @@ data class CompositeIngredient(
         return adjusted(baseUnit, unit)
     }
 
+    /**
+     * Multiplies the ingredient amounts by a factor. Returns a new CompositeIngredient with
+     * the adjusted amounts and unit.
+     */
     fun adjusted(factor: Double, unit: String): CompositeIngredient =
         CompositeIngredient(label, ingredients.map { (i, v) ->
             if (i is CompositeIngredient) {
@@ -107,14 +123,6 @@ data class CompositeIngredient(
     override fun toString() =
         """$label
 ${ingredients.joinToString(", ") { "${it.second.roundTo(2)} $unit ${it.first.label.toLowerCase()}" }}"""
-}
-
-fun Ingredient.changeValue(value: Double): Ingredient {
-    return if (this is CompositeIngredient) {
-        this.copy(ingredients = ingredients.map { (i, v) -> i to v / ingredients.total() * value })
-    } else {
-        this
-    }
 }
 
 val starter = CompositeIngredient(
