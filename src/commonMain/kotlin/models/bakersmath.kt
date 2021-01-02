@@ -10,8 +10,9 @@ interface Ingredient {
     val label: String
 }
 
-enum class BaseIngredient(override val label: String, val isFlour: Boolean = false) : Ingredient {
-    Water("water"),
+enum class BaseIngredient(override val label: String, val isFlour: Boolean = false, val isWater: Boolean=false) : Ingredient {
+    Water("water", isWater = true),
+    Milk("milk", isWater = true),
     AllPurposeFlour("all purpose flour", true),
     Wheat("wheat", true),
     WholeWheat("whole wheat", true),
@@ -27,20 +28,20 @@ fun Double.roundTo(decimals: Int = 2): Double {
     return round(this * factor) / factor
 }
 
-fun List<Pair<Ingredient, Double>>.content(ingredient: BaseIngredient): Double = this.map { (i, v) ->
-    when (i) {
-        ingredient -> {
+fun List<Pair<Ingredient, Double>>.content(eval: (Ingredient)->Boolean): Double = this.map { (i, v) ->
+    when {
+        eval.invoke(i) -> {
             v
         }
-        is CompositeIngredient -> {
-            i.ingredients.content(ingredient)
+        i is CompositeIngredient -> {
+            i.ingredients.content(eval)
         }
         else -> 0.0
     }
 }.sum()
 
-fun List<Pair<Ingredient, Double>>.waterContent(): Double = content(BaseIngredient.Water)
-fun List<Pair<Ingredient, Double>>.saltContent(): Double = content(BaseIngredient.Salt)
+fun List<Pair<Ingredient, Double>>.waterContent(): Double = content { it is BaseIngredient && it.isWater }
+fun List<Pair<Ingredient, Double>>.saltContent(): Double = content { it == BaseIngredient.Salt}
 
 fun List<Pair<Ingredient, Double>>.flourContent(): Double = this.map { (i, v) ->
     when (i) {
@@ -155,36 +156,3 @@ data class CompositeIngredient(
 ${ingredients.joinToString(", ") { "${it.second.roundTo(2)} $unit ${it.first.label.toLowerCase()}" }}"""
 }
 
-val starter = CompositeIngredient(
-    "Sourdough Starter", listOf(
-        BaseIngredient.Water to 1.0,
-        BaseIngredient.WholeWheat to 1.0
-    )
-)
-
-val pieDough = CompositeIngredient(
-    "Pie Dough", listOf(
-        BaseIngredient.AllPurposeFlour to 3.0,
-        BaseIngredient.Butter to 2.0,
-        BaseIngredient.Sugar to 1.0,
-    )
-).addSaltPercentage(0.022).hydrate(0.03)
-
-val pancakeBatter = CompositeIngredient(
-    "Pancake Batter",
-    listOf(BaseIngredient.AllPurposeFlour to 1.0)
-).hydrate(0.95).addSaltPercentage(0.022)
-
-fun sourDough(hydration: Double=0.65, saltPercentage: Double = 0.022): CompositeIngredient {
-    val starterQuantity = 1.0
-    val flourQuantity = 5.0
-
-
-    return CompositeIngredient(
-        "Sourdough", listOf(
-            starter.multiply(starterQuantity / starter.ingredients.total(), starter.unit) to starterQuantity,
-            BaseIngredient.Wheat to flourQuantity * 0.8,
-            BaseIngredient.WholeWheat to flourQuantity * 0.2,
-        )
-    ).hydrate(hydration).addSaltPercentage(saltPercentage)
-}
