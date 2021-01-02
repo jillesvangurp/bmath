@@ -70,9 +70,12 @@ fun main() {
                             p {
                                 +"""
                                     Creating this tool was a fun little Christmas project for me to get familiar 
-                                    with the awesome"""
-                                a {href("https://www.fritz2.dev/")}
-                                +"""framework for 
+                                    with the awesome """
+                                a {
+                                    +"Fritz2"
+                                    href("https://www.fritz2.dev/")
+                                }
+                                +""" framework for 
                                     Kotlin-js. It uses a simple bootstrap based layout and some simple form elements. 
                                     But I did not put a lot of effort in making this look particularly good. Mostly 
                                     the point of this exercise was getting the form to update state dynamically so 
