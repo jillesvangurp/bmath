@@ -5,6 +5,8 @@ import dev.fritz2.dom.html.RenderContext
 import dev.fritz2.dom.html.render
 import dev.fritz2.dom.mount
 import dev.fritz2.dom.values
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import models.*
 
@@ -170,12 +172,13 @@ fun RenderContext.ingredientInput(
     recipeStore: RecipeStore,
     subStore: SubStore<CompositeIngredient, List<Pair<Ingredient, Double>>, Pair<Ingredient, Double>>
 ): Div {
-    val (i, _) = subStore.current
+
     return div {
         div("row") {
             label("col-md-7") {
                 `for`(subStore.id)
-                +("${i.label} (${recipeStore.unit.current})")
+                subStore.data.map { it.first }.asText()
+                +(" (${recipeStore.unit.current})")
             }
             input("form-control col-md-5", id = subStore.id) {
                 value(subStore.data.map { (_, v) -> v.roundTo(2).toString() })
@@ -190,9 +193,11 @@ fun RenderContext.ingredientInput(
                 }
             }
         }
-        if (i is CompositeIngredient) {
-            p("row d-flex justify-content-end") {
-                    subStore.data.map { (ii,v) -> "$v ${i.unit}: ($ii)" }.asText()
+        subStore.data.map { it.first }.map {
+            if (it is CompositeIngredient) {
+                p("row d-flex justify-content-end") {
+                        subStore.data.map { (ii,v) -> "$v ${it.unit}: ($ii)" }.asText()
+                }
             }
         }
     }
