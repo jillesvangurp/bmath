@@ -34,7 +34,7 @@ fun main() {
 
     render {
         div("container-fluid") {
-            div("row d-flex justify-content-center") {
+            header("row d-flex justify-content-center") {
                 h1 {
                     +"Bakers math"
                 }
@@ -65,6 +65,49 @@ fun main() {
                     div("row") {
                         div("col-12") {
                             h2 {
+                                +"About"
+                            }
+                            p {
+                                +"""
+                                    Creating this tool was a fun little Christmas project for me to get familiar 
+                                    with the awesome"""
+                                a {href("https://www.fritz2.dev/")}
+                                +"""framework for 
+                                    Kotlin-js. It uses a simple bootstrap based layout and some simple form elements. 
+                                    But I did not put a lot of effort in making this look particularly good. Mostly 
+                                    the point of this exercise was getting the form to update state dynamically so 
+                                    you can fiddle with the values.
+  
+                                """
+                            }
+                            p {
+                                +"""
+                                    Bakers math is the notion that bakers calculate weights of ingredients relative
+                                    to flour content of the recipe. So for example salt content is usually around 2.2 
+                                    percent of the flour weight. Similarly water content is calculated as a percentage
+                                    of that.
+                                """.trimIndent()
+                            }
+                            p {
+                                +"""
+                                    I started baking sourdough breads some time ago and calculating the correct amount of 
+                                    water and salt to add gets a bit complicated if you consider that a sourdough 
+                                    starter adds water and flour as well (50/50, typically). The best way to get
+                                    consistent results is to carefully weigh your ingredients and try to aim for a 
+                                    specific hydration percentage. I usually aim for something like 65%, which is easy
+                                    to work with. Some people go much higher than that but it makes handling the dough
+                                    a lot harder.                                      
+                                """
+                            }
+                            p {
+                                +"""
+                                    Writing a simple UI for this was a perfect excuse to get my hands dirty with
+                                    Fritz2 and do something vaguely useful. There are probably many other tools out
+                                     there that do similar things and probably do them better. But this one works
+                                     for me.
+                                """.trimIndent()
+                            }
+                            h2 {
                                 +"Future work"
                             }
                             p {
@@ -83,6 +126,15 @@ fun main() {
                             }
                         }
                     }
+                }
+            }
+            footer("row d-flex justify-content-center") {
+                p {
+                    a {
+                        +"bmath on Github"
+                        href("https://github.com/jillesvangurp/bmath")
+                    }
+                    +" Copyright Jilles van Gurp"
                 }
 
             }
