@@ -8,10 +8,9 @@ import dev.fritz2.dom.values
 import kotlinx.coroutines.flow.map
 import models.*
 
-val sourDough = sourDough(.65).adjustRatioTo(BaseIngredient.Wheat, 800.0, "grams")
 
 class RecipeStore :
-    RootStore<CompositeIngredient>(sourDough) {
+    RootStore<CompositeIngredient>(recipes[0]) {
     val label = this.sub(L.CompositeIngredient.label)
     val unit = this.sub(L.CompositeIngredient.unit)
     val ingredients = this.sub(L.CompositeIngredient.ingredients)
@@ -25,7 +24,7 @@ class RecipeStore :
     }
 
     val reset = handle { _ ->
-        sourDough
+        recipes[0]
     }
 }
 

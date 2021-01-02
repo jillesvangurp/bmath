@@ -43,7 +43,7 @@ fun sourDough(hydration: Double = 0.65, saltPercentage: Double = 0.022): Composi
 }
 
 val recipes = listOf(
-    sourDough(),
+    sourDough().adjustRatioTo(BaseIngredient.Wheat,500.0, "grams"),
     pieDough.adjustRatioTo(BaseIngredient.AllPurposeFlour, 100.0, "grams"),
     oliebollen.adjustRatioTo(BaseIngredient.AllPurposeFlour, 250.0, "grams")
 )
