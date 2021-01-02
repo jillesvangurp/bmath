@@ -152,7 +152,6 @@ data class CompositeIngredient(
         }, unit)
 
     override fun toString() =
-        """$label
-${ingredients.joinToString(", ") { "${it.second.roundTo(2)} $unit ${it.first.label.toLowerCase()}" }}"""
+        """$label ${ingredients.joinToString(", ") { "${it.second.roundTo(2)} $unit ${it.first.label.toLowerCase()}" }}"""
 }
 

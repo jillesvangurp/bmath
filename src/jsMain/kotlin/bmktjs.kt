@@ -171,61 +171,61 @@ fun RenderContext.ingredientInput(
     subStore: SubStore<CompositeIngredient, List<Pair<Ingredient, Double>>, Pair<Ingredient, Double>>
 ): Div {
     val (i, _) = subStore.current
-    return div("form-group row") {
-        label("col-md-7") {
-            `for`(subStore.id)
-            +("${i.label} (${recipeStore.unit.current})")
-        }
-        input("form-control col-md-5", id = subStore.id) {
-            value(subStore.data.map { (_, v) -> v.roundTo(2).toString() })
+    return div {
+        div("row") {
+            label("col-md-7") {
+                `for`(subStore.id)
+                +("${i.label} (${recipeStore.unit.current})")
+            }
+            input("form-control col-md-5", id = subStore.id) {
+                value(subStore.data.map { (_, v) -> v.roundTo(2).toString() })
 
-            changes.values().map { it.toDouble() } handledBy subStore.handle { (ingredient, _), newValue ->
-                (if (ingredient is CompositeIngredient) {
-                    // adjust the sub ingredients to the new value
-                    ingredient.copy(ingredients = ingredient.ingredients.map { (i, v) -> i to v / ingredient.ingredients.total() * newValue })
-                } else {
-                    ingredient
-                }) to newValue
+                changes.values().map { it.toDouble() } handledBy subStore.handle { (ingredient, _), newValue ->
+                    (if (ingredient is CompositeIngredient) {
+                        // adjust the sub ingredients to the new value
+                        ingredient.copy(ingredients = ingredient.ingredients.map { (i, v) -> i to v / ingredient.ingredients.total() * newValue })
+                    } else {
+                        ingredient
+                    }) to newValue
+                }
             }
         }
-    }
-    if (i is CompositeIngredient) {
-        p("row") {
-            p {
-                subStore.data.map { it.toString() }.asText()
+        if (i is CompositeIngredient) {
+            p("row d-flex justify-content-end") {
+                    subStore.data.map { (ii,v) -> "$v ${i.unit}: ($ii)" }.asText()
             }
         }
     }
 }
 
 fun RenderContext.hydrationInput(recipeStore: RecipeStore) {
-        label("col-md-4") {
-            `for`(recipeStore.id + ".hydration")
-            +"Hydration (%)"
-        }
-        input("form-control col-md-2", id = recipeStore.id + ".hydration") {
-            placeholder("0.0")
-            value(recipeStore.data.map {
-                (it.ingredients.hydration() * 100).roundTo(2).toString() + ""
-            })
+    label("col-md-4") {
+        `for`(recipeStore.id + ".hydration")
+        +"Hydration (%)"
+    }
+    input("form-control col-md-2", id = recipeStore.id + ".hydration") {
+        placeholder("0.0")
+        value(recipeStore.data.map {
+            (it.ingredients.hydration() * 100).roundTo(2).toString() + ""
+        })
 
-            changes.values() handledBy recipeStore.hydrate
-        }
+        changes.values() handledBy recipeStore.hydrate
+    }
 }
 
 fun RenderContext.saltPercentageInput(recipeStore: RecipeStore) {
-        label("col-md-4") {
-            `for`(recipeStore.id + ".salt")
-            +"Salt percentage (%)"
-        }
-        input("form-control col-md-2", id = recipeStore.id + ".salt") {
-            placeholder("0.0")
-            value(recipeStore.data.map {
-                (it.ingredients.saltPercentage() * 100).roundTo(2).toString() + ""
-            })
+    label("col-md-4") {
+        `for`(recipeStore.id + ".salt")
+        +"Salt percentage (%)"
+    }
+    input("form-control col-md-2", id = recipeStore.id + ".salt") {
+        placeholder("0.0")
+        value(recipeStore.data.map {
+            (it.ingredients.saltPercentage() * 100).roundTo(2).toString() + ""
+        })
 
-            changes.values() handledBy recipeStore.setSalt
-        }
+        changes.values() handledBy recipeStore.setSalt
+    }
 }
 
 
