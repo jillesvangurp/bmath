@@ -175,12 +175,12 @@ fun RenderContext.ingredientInput(
 
     return div {
         div("row") {
-            label("col-md-7") {
+            label("col-md-10") {
                 `for`(subStore.id)
                 subStore.data.map { it.first }.asText()
                 +(" (${recipeStore.unit.current})")
             }
-            input("form-control col-md-5", id = subStore.id) {
+            input("form-control col-md-2", id = subStore.id) {
                 value(subStore.data.map { (_, v) -> v.roundTo(2).toString() })
 
                 changes.values().map { it.toDouble() } handledBy subStore.handle { (ingredient, _), newValue ->
