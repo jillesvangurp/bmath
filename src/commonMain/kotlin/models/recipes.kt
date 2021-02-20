@@ -2,13 +2,6 @@
 
 package models
 
-val sourDoughStarter = CompositeIngredient(
-    "Sourdough Starter", listOf(
-        BaseIngredient.Water to 1.0,
-        BaseIngredient.WholeWheat to 1.0
-    )
-)
-
 val pieDough = CompositeIngredient(
     "Pie Dough", listOf(
         BaseIngredient.AllPurposeFlour to 3.0,
@@ -25,25 +18,65 @@ val oliebollen = CompositeIngredient(
     )
 ).addSaltPercentage(0.022)
 
-fun sourDough(hydration: Double = 0.65, saltPercentage: Double = 0.022): CompositeIngredient {
-    val starterQuantity = 1.0
-    val flourQuantity = 5.0
+fun sourDoughStarter(flourType: BaseIngredient, waterPercentage: Double = 100.0, title: String) = CompositeIngredient(
+    title, listOf(
+        BaseIngredient.Water to waterPercentage / 100.0,
+        flourType to 1.0
+    )
+)
 
+fun sourDough(
+    title: String,
+    starter: CompositeIngredient,
+    vararg flours: Pair<BaseIngredient, Double>,
+    hydration: Double = 0.65,
+    saltPercentage: Double = 0.022,
+    starterQuantity: Double = 1.0,
+    flourQuantity: Double = 5.0,
+): CompositeIngredient {
 
+    val total = flours.map { (f,q)->q }.sum()
+    val ingredients = listOf(
+        starter.multiply(
+            starterQuantity / starter.ingredients.total(),
+            starter.unit
+        ) to starterQuantity
+    ) + flours.map { (f, q) -> f to flourQuantity * q/total }
     return CompositeIngredient(
-        "Sourdough", listOf(
-            sourDoughStarter.multiply(
-                starterQuantity / sourDoughStarter.ingredients.total(),
-                sourDoughStarter.unit
-            ) to starterQuantity,
-            BaseIngredient.Wheat to flourQuantity * 0.8,
-            BaseIngredient.WholeWheat to flourQuantity * 0.2,
-        )
+        title, ingredients
     ).hydrate(hydration).addSaltPercentage(saltPercentage)
 }
 
+
 val recipes = listOf(
-    sourDough().adjustRatioTo(BaseIngredient.Wheat,500.0, "grams"),
+    sourDough(
+        "Sourdough",
+        sourDoughStarter(
+            flourType = BaseIngredient.Wheat,
+            title = "Wheat based starter"
+        ),
+        BaseIngredient.Wheat to 1.0,
+
+        ).adjustRatioTo(BaseIngredient.Wheat, 500.0, "grams"),
+    sourDough(
+        title = "WholeWheat Sourdough",
+        starter = sourDoughStarter(
+            flourType = BaseIngredient.WholeWheat,
+            title = "Whole wheat based starter"
+        ),
+        BaseIngredient.Wheat to 0.8,
+        BaseIngredient.WholeWheat to 0.2,
+    ).adjustRatioTo(BaseIngredient.Wheat, 500.0, "grams"),
+    sourDough(
+        title = "Mixed Flour Sourdough",
+        starter = sourDoughStarter(
+            flourType = BaseIngredient.Rye,
+            title = "Rye based starter"
+        ),
+        BaseIngredient.Wheat to 0.6,
+        BaseIngredient.Rye to 0.2,
+        BaseIngredient.WholeWheat to 0.2,
+    ).adjustRatioTo(BaseIngredient.Wheat, 500.0, "grams"),
     pieDough.adjustRatioTo(BaseIngredient.AllPurposeFlour, 100.0, "grams"),
     oliebollen.adjustRatioTo(BaseIngredient.AllPurposeFlour, 250.0, "grams")
 )
