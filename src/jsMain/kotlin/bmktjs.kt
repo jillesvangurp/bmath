@@ -1,20 +1,20 @@
 import dev.fritz2.binding.RootStore
 import dev.fritz2.binding.SimpleHandler
-import dev.fritz2.binding.SubStore
-import dev.fritz2.dom.html.Div
 import dev.fritz2.dom.html.RenderContext
 import dev.fritz2.dom.html.render
 import dev.fritz2.dom.mount
 import dev.fritz2.dom.values
+import kotlinx.browser.document
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import models.*
+import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
 
 
 class RecipeStore :
-    RootStore<CompositeIngredient>(recipes[0]) {
+    RootStore<CompositeIngredient>(recipes[0].second[0].first) {
     val label = this.sub(L.CompositeIngredient.label)
     val unit = this.sub(L.CompositeIngredient.unit)
     val ingredients = this.sub(L.CompositeIngredient.ingredients)
@@ -28,7 +28,7 @@ class RecipeStore :
     }
 
     val reset = handle { _ ->
-        recipes[0]
+        recipes[0].second[0].first
     }
 }
 
@@ -46,22 +46,31 @@ fun main() {
                 div("container") {
                     div("row") {
                         div("col-3") {
-                            ul("nav flex-column") {
-                                recipes.forEach { recipe ->
-                                    li("nav-item") {
-                                        a("nav-link") {
-                                            +recipe.label
-                                            href("#")
-                                            clicks handledBy recipeStore.handle {
-                                                recipe
+                            recipes.forEach { (sectionName, section) ->
+                                h5 { +sectionName }
+                                ul("nav flex-column") {
+                                    section.forEach { (recipe,instructions) ->
+                                        li("nav-item") {
+                                            a("nav-link") {
+                                                +recipe.label
+                                                href("#")
+                                                clicks handledBy recipeStore.handle {
+                                                    val element = document.getElementById("_instructions") as HTMLDivElement
+                                                    element.innerHTML = instructions
+                                                    recipe
+                                                }
                                             }
                                         }
                                     }
+
                                 }
                             }
                         }
                         div("col-9 jumbotron") {
                             compositeIngredient(recipeStore)
+                            div(id="_instructions") {
+
+                            }
                         }
                     }
                     div("row") {
@@ -226,7 +235,7 @@ fun RenderContext.sliderInput(
         `for`(id)
         label.asText()
         +" "
-        strong { values.asText() }
+        strong { values.map { it.roundTo(1) }.asText() }
         +" "
         unit.asText()
     }

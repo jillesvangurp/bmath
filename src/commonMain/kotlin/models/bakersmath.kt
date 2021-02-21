@@ -73,7 +73,7 @@ fun List<Pair<Ingredient, Double>>.total(): Double =
 data class CompositeIngredient(
     override val label: String,
     val ingredients: List<Pair<Ingredient, Double>>,
-    val unit: String = "parts",
+    val unit: String = "parts"
 ) : Ingredient {
 
     /**
